@@ -3,6 +3,55 @@
 
 **Tarea 1: Crea un escenario Vagrant o utiliza una máquina del cloud con una red pública. Instala el servidor web nginx en la máquina. Modifica la página index.html que viene por defecto y accede a ella desde un navegador. Entrega una captura de pantalla accediendo a ella.**
 
+[Máquina_servidor_gnix](https://github.com/PalomaR88/Servidor_web_gninx/blob/master/Vagrantfile "Máquina Debian Buster con Vagrant")
+
+Actualización de la máquina.
+~~~
+vagrant@servidornginx:~$ sudo apt update
+~~~
+
+Instalación de Nginx:
+~~~
+vagrant@servidornginx:~$ sudo apt install nginx
+~~~
+
+Se observa la dirección del root de /etc/nginx/sites-available/default:
+~~~
+        root /var/www/html;
+~~~
+
+Y se accede al index.html de esa ruta para modificarlo:
+~~~
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+    body {
+        width: 35em;
+        margin: 0 auto;
+        font-family: Tahoma, Verdana, Arial, sans-serif;
+    }
+</style>
+</head>
+<body>
+<h1>Sitio web de Paloma</h1>
+<p>Práctica de Nginx</p>
+
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>
+~~~
+
+![Imagen incial](aimg.png)
+
+
+
 ## Virtual Hosting
 Queremos que nuestro servidor web ofrezca dos sitios web, teniendo en cuenta lo siguiente:
 - Cada sitio web tendrá nombres distintos.
@@ -10,29 +59,84 @@ Queremos que nuestro servidor web ofrezca dos sitios web, teniendo en cuenta lo 
 
 Los dos sitios web tendrán las siguientes características:
 
-    El nombre de dominio del primero será www.iesgn.org, su directorio base será /srv/www/iesgn y contendrá una página llamada index.html, donde sólo se verá una bienvenida a la página del Instituto Gonzalo Nazareno.
-    En el segundo sitio vamos a crear una página donde se pondrán noticias por parte de los departamento, el nombre de este sitio será departamentos.iesgn.org, y su directorio base será /srv/www/departamentos. En este sitio sólo tendremos una página inicial index.html, dando la bienvenida a la página de los departamentos del instituto.
+- El nombre de dominio del primero será www.iesgn.org, su directorio base será /srv/www/iesgn y contendrá una página llamada index.html, donde sólo se verá una bienvenida a la página del Instituto Gonzalo Nazareno.
+- En el segundo sitio vamos a crear una página donde se pondrán noticias por parte de los departamento, el nombre de este sitio será departamentos.iesgn.org, y su directorio base será /srv/www/departamentos. En este sitio sólo tendremos una página inicial index.html, dando la bienvenida a la página de los departamentos del instituto.
 
-    Tarea 2 (1 punto)(Obligatorio): Configura la resolución estática en los clientes y muestra el acceso a cada una de las páginas.
+**Tarea 2 (1 punto)(Obligatorio): Configura la resolución estática en los clientes y muestra el acceso a cada una de las páginas.**
+Se copia el fichero default:
+~~~
+vagrant@servidornginx:/etc/nginx/sites-available$ sudo cp default iesgn
+vagrant@servidornginx:/etc/nginx/sites-available$ sudo cp default departamentos
+~~~
 
-Mapeo de URLPermalink
+Se modifica /etc/nginx/sites-available/iesgn:
+~~~
+server {
+        listen 80 default_server;
+        listen [::]:80 default_server;
 
+        root /srv/www/iesgn;
+
+        index index.html index.htm index.nginx-debian.html;
+
+        server_name www.iesgn.org;
+
+        location / {
+                try_files $uri $uri/ =404;
+        }
+}
+~~~
+
+Se modifica /etc/nginx/sites-available/departamentos:
+~~~
+server {
+        listen 80 default_server;
+        listen [::]:80 default_server;
+
+        root /srv/www/departamentos;
+
+        # Add index.php to the list if you are using PHP
+        index index.html index.htm index.nginx-debian.html;
+
+        server_name departamentos.iesgn.org;
+
+        location / {
+                try_files $uri $uri/ =404;
+        }
+}
+~~~
+
+
+
+
+
+
+Mapeo de URL
 Cambia la configuración del sitio web www.iesgn.org para que se comporte de la siguiente forma:
 
-    Tarea 3 (1 punto)(Obligatorio): Cuando se entre a la dirección www.iesgn.org se redireccionará automáticamente a www.iesgn.org/principal, donde se mostrará el mensaje de bienvenida. En el directorio principal no se permite ver la lista de los ficheros, no se permite que se siga los enlaces simbólicos y no se permite negociación de contenido. Muestra al profesor el funcionamiento.
-    Tarea 4 (1 punto)(Obligatorio): Si accedes a la página www.iesgn.org/principal/documentos se visualizarán los documentos que hay en /srv/doc. Por lo tanto se permitirá el listado de fichero y el seguimiento de enlaces simbólicos siempre que sean a ficheros o directorios cuyo dueño sea el usuario. Muestra al profesor el funcionamiento.
-    Tarea 5 (1 punto): En todo el host virtual se debe redefinir los mensajes de error de objeto no encontrado y no permitido. Para el ello se crearan dos ficheros html dentro del directorio error. Entrega las modificaciones necesarias en la configuración y una comprobación del buen funcionamiento.
+**Tarea 3 (1 punto)(Obligatorio): Cuando se entre a la dirección www.iesgn.org se redireccionará automáticamente a www.iesgn.org/principal, donde se mostrará el mensaje de bienvenida. En el directorio principal no se permite ver la lista de los ficheros, no se permite que se siga los enlaces simbólicos y no se permite negociación de contenido. Muestra al profesor el funcionamiento.**
+
+
+**Tarea 4 (1 punto)(Obligatorio): Si accedes a la página www.iesgn.org/principal/documentos se visualizarán los documentos que hay en /srv/doc. Por lo tanto se permitirá el listado de fichero y el seguimiento de enlaces simbólicos siempre que sean a ficheros o directorios cuyo dueño sea el usuario. Muestra al profesor el funcionamiento.**
+
+**Tarea 5 (1 punto): En todo el host virtual se debe redefinir los mensajes de error de objeto no encontrado y no permitido. Para el ello se crearan dos ficheros html dentro del directorio error. Entrega las modificaciones necesarias en la configuración y una comprobación del buen funcionamiento.**
 
 Autentificación, Autorización, y Control de AccesoPermalink
 
-    Tarea 6 (1 punto)(Obligatorio): Añade al escenario Vagrant otra máquina conectada por una red interna al servidor. A la URL departamentos.iesgn.org/intranet sólo se debe tener acceso desde el cliente de la red local, y no se pueda acceder desde la anfitriona por la red pública. A la URL departamentos.iesgn.org/internet, sin embargo, sólo se debe tener acceso desde la anfitriona por la red pública, y no desde la red local.
-    Tarea 7 (1 punto): Autentificación básica. Limita el acceso a la URL departamentos.iesgn.org/secreto. Comprueba las cabeceras de los mensajes HTTP que se intercambian entre el servidor y el cliente. ¿Cómo se manda la contraseña entre el cliente y el servidor?. Entrega una breve explicación del ejercicio.
-    Tarea 8 (1 punto): Cómo hemos visto la autentificación básica no es segura, modifica la autentificación para que sea del tipo digest, y sólo sea accesible a los usuarios pertenecientes al grupo directivos. Comprueba las cabeceras de los mensajes HTTP que se intercambian entre el servidor y el cliente. ¿Cómo funciona esta autentificación?
-    Tarea 9 (1 punto): Vamos a combinar el control de acceso (tarea 6) y la autentificación (tareas 7 y 8), y vamos a configurar el virtual host para que se comporte de la siguiente manera: el acceso a la URL departamentos.iesgn.org/secreto se hace forma directa desde la intranet, desde la red pública te pide la autentificación. Muestra el resultado al profesor.
 
-IPv6Permalink
+**Tarea 6 (1 punto)(Obligatorio): Añade al escenario Vagrant otra máquina conectada por una red interna al servidor. A la URL departamentos.iesgn.org/intranet sólo se debe tener acceso desde el cliente de la red local, y no se pueda acceder desde la anfitriona por la red pública. A la URL departamentos.iesgn.org/internet, sin embargo, sólo se debe tener acceso desde la anfitriona por la red pública, y no desde la red local.**
 
-    Tarea 10 (1 punto): Comprueba que el servidor web con la configuración por defecto está escuchando por el puerto 80 en ipv6. Configura la máquina para que tenga una ipv6 global. Activa el virtualhost por defecto y accede a la página principal utilizando la ipv6 global que tiene asignada.
-    Tarea 11 (1 punto): Configura la resolución estática para acceder a los virtualhost utilizando ipv6.
+**Tarea 7 (1 punto): Autentificación básica. Limita el acceso a la URL departamentos.iesgn.org/secreto. Comprueba las cabeceras de los mensajes HTTP que se intercambian entre el servidor y el cliente. ¿Cómo se manda la contraseña entre el cliente y el servidor?. Entrega una breve explicación del ejercicio.**
+
+**Tarea 8 (1 punto): Cómo hemos visto la autentificación básica no es segura, modifica la autentificación para que sea del tipo digest, y sólo sea accesible a los usuarios pertenecientes al grupo directivos. Comprueba las cabeceras de los mensajes HTTP que se intercambian entre el servidor y el cliente. ¿Cómo funciona esta autentificación?**
+
+**Tarea 9 (1 punto): Vamos a combinar el control de acceso (tarea 6) y la autentificación (tareas 7 y 8), y vamos a configurar el virtual host para que se comporte de la siguiente manera: el acceso a la URL departamentos.iesgn.org/secreto se hace forma directa desde la intranet, desde la red pública te pide la autentificación. Muestra el resultado al profesor.**
+
+
+# IPv6
+
+**Tarea 10 (1 punto): Comprueba que el servidor web con la configuración por defecto está escuchando por el puerto 80 en ipv6. Configura la máquina para que tenga una ipv6 global. Activa el virtualhost por defecto y accede a la página principal utilizando la ipv6 global que tiene asignada.**
+
+**Tarea 11 (1 punto): Configura la resolución estática para acceder a los virtualhost utilizando ipv6.**
 
 
