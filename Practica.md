@@ -175,6 +175,8 @@ Se añaden los cambios en /etc/nginx/sites-available/iesgn con un alias:
         location /principal/documentos {
                 try_files $uri $uri/ =404;
                 alias /srv/doc;
+                autoindex on;
+                disable_symlinks if_not_owner;
         }
 ~~~
 
@@ -192,23 +194,152 @@ prueba1  prueba2
 
 ![Documentos](eimg.png)
 
+A continuación creamos un par de enlaces simbólicos, uno cuyo propietario del fichero es el usuario vagrant y el enlace es el usuario root y otro cuyo propietario del enlace y del fichero es el root
 ~~~
 vagrant@servidornginx:/srv/doc$ touch /home/vagrant/ficheroVagrant.txt
 vagrant@servidornginx:/srv/doc$ sudo ln -s /home/vagrant/ficheroVagrant.txt /srv/doc/
+vagrant@servidornginx:/srv/doc$ sudo touch /home/vagrant/ficheroRoot.txt
+vagrant@servidornginx:~$ sudo ln -s /home/vagrant/ficheroRoot.txt /srv/doc/
+~~~
+
+Se comprueba que el fichero que coincide el usuario del enlace simbólico y el propietario del fichero se puede ver.
+![Enlaces](fimg.png)
+
+Y el fichero cuyos propietarios del enlace y del fichero son diferentes no aparece.
+![Enlaces](gimg.png)
 
 
 
+**Tarea 5: En todo el host virtual se debe redefinir los mensajes de error de objeto no encontrado y no permitido. Para el ello se crearan dos ficheros html dentro del directorio error. Entrega las modificaciones necesarias en la configuración y una comprobación del buen funcionamiento.**
 
-**Tarea 5 (1 punto): En todo el host virtual se debe redefinir los mensajes de error de objeto no encontrado y no permitido. Para el ello se crearan dos ficheros html dentro del directorio error. Entrega las modificaciones necesarias en la configuración y una comprobación del buen funcionamiento.**
+Se crea un directorio donde guardar los html de los errores:
+~~~
+vagrant@servidornginx:~$ sudo mkdir /srv/www/iesgn/error
+vagrant@servidornginx:~$ sudo touch /srv/www/iesgn/error/403.html
+vagrant@servidornginx:~$ sudo touch /srv/www/iesgn/error/404.html
+vagrant@servidornginx:~$ sudo chown -R www-data:www-data /srv/www/iesgn/error/
+~~~
 
-Autentificación, Autorización, y Control de Acceso
+Se modifica el fichero /etc/nginx/sites-available/iesgn y se añaden las líneas de errores:
+~~~
+        error_page 404 /error/404.html;
+                location /error/404.html {
+                        internal;
+                }
+
+        error_page 403 /error/403.html;
+                location /error/403.html {
+                        internal;
+                }
+~~~
+
+Se usa el fichero del ejercicio anterior para ver si funciona correctamente el error 404:
+![Enlaces](himg.png)
 
 
-**Tarea 6 (1 punto)(Obligatorio): Añade al escenario Vagrant otra máquina conectada por una red interna al servidor. A la URL departamentos.iesgn.org/intranet sólo se debe tener acceso desde el cliente de la red local, y no se pueda acceder desde la anfitriona por la red pública. A la URL departamentos.iesgn.org/internet, sin embargo, sólo se debe tener acceso desde la anfitriona por la red pública, y no desde la red local.**
 
-**Tarea 7 (1 punto): Autentificación básica. Limita el acceso a la URL departamentos.iesgn.org/secreto. Comprueba las cabeceras de los mensajes HTTP que se intercambian entre el servidor y el cliente. ¿Cómo se manda la contraseña entre el cliente y el servidor?. Entrega una breve explicación del ejercicio.**
+## Autentificación, Autorización, y Control de Acceso
 
-**Tarea 8 (1 punto): Cómo hemos visto la autentificación básica no es segura, modifica la autentificación para que sea del tipo digest, y sólo sea accesible a los usuarios pertenecientes al grupo directivos. Comprueba las cabeceras de los mensajes HTTP que se intercambian entre el servidor y el cliente. ¿Cómo funciona esta autentificación?**
+**Tarea 6: Añade al escenario Vagrant otra máquina conectada por una red interna al servidor. A la URL departamentos.iesgn.org/intranet sólo se debe tener acceso desde el cliente de la red local, y no se pueda acceder desde la anfitriona por la red pública. A la URL departamentos.iesgn.org/internet, sin embargo, sólo se debe tener acceso desde la anfitriona por la red pública, y no desde la red local.**
+
+Se crean los directorios correspondientes:
+~~~
+vagrant@servidornginx:~$ sudo mkdir /srv/www/departamentos/internet
+vagrant@servidornginx:~$ sudo mkdir /srv/www/departamentos/intranet
+vagrant@servidornginx:~$ sudo chown -R www-data:www-data /srv/www/departamentos/
+~~~
+
+Se añaden las reglas para internet e intranet en /etc/nginx/sites-available/departamentos:
+~~~
+server {
+        listen 80;
+        listen [::]:80;
+
+        root /srv/www/departamentos;
+
+        index index.html index.htm index.nginx-debian.html;
+
+        server_name departamentos.iesgn.org;
+
+        location / {
+                try_files $uri $uri/ =404;
+        }
+        location /internet {
+                deny 192.168.100.0/24;
+                allow all;
+        }
+
+        location /intranet {
+                allow 192.168.100.0/24;
+                deny all;
+        }
+}
+~~~
+
+Tras reiniciar el servicio se comprueba. En primer lugar, internet, desde la máquina anfitriona, debe funcionar:
+![Internet](iimg.png)
+
+Sin embargo, la intranet no funciona:
+![Intranet](jimg.png)
+
+En la máquina conectada a la intranet, al acceder a internet, a través de lynx porque no dispone de interfaz gráfica, aparece el siguiente error:
+~~~
+                                                             403 Forbidden
+                             403 Forbidden
+     ____________________________________________________________
+
+                             nginx/1.14.2
+
+~~~
+
+Y si se accede a intranet:
+~~~
+
+   Bienvenido a la intranet
+
+~~~
+
+
+
+**Tarea 7: Autentificación básica. Limita el acceso a la URL departamentos.iesgn.org/secreto. Comprueba las cabeceras de los mensajes HTTP que se intercambian entre el servidor y el cliente. ¿Cómo se manda la contraseña entre el cliente y el servidor?. Entrega una breve explicación del ejercicio.**
+
+Para este ejercicio hay que instalar algunos paquetes que son herramientas de apache:
+~~~
+vagrant@servidornginx:/srv/www/departamentos$ sudo apt install apache2-utils 
+~~~
+
+Se crea el nuevo directorio secreto:
+~~~
+vagrant@servidornginx:/srv/www/departamentos$ sudo mkdir secreto
+vagrant@servidornginx:/srv/www/departamentos$ sudo nano secreto/index.html
+~~~
+
+El fichero /etc/nginx/sites-available/departamentos se añade la configuración restringida de /secreto:
+~~~
+        location /secreto {
+                auth_basic "Contenido secreto";
+                auth_basic_user_file /etc/nginx/.htpasswd;
+        } 
+~~~
+
+A continuación, se añade el usuario, en este caso vagrant, al fichero /etc/nginx/.htpasswd que se menciona en el paso anterior. Con el siguiente comando se crea el fichero además de agregarse el usuario.
+~~~
+vagrant@servidornginx:~$ sudo htpasswd -c -m /etc/nginx/.htpasswd vagrant
+New password: 
+Re-type new password: 
+Adding password for user vagrant
+~~~
+
+Comprobación:
+![Secreto](kimg.png)
+
+Introduciendo el usuario y la contraseña correcta podemos acceder al sitio:
+![Secreto](limg.png)
+
+
+**Tarea 8: Cómo hemos visto la autentificación básica no es segura, modifica la autentificación para que sea del tipo digest, y sólo sea accesible a los usuarios pertenecientes al grupo directivos. Comprueba las cabeceras de los mensajes HTTP que se intercambian entre el servidor y el cliente. ¿Cómo funciona esta autentificación?**
+
+
 
 **Tarea 9 (1 punto): Vamos a combinar el control de acceso (tarea 6) y la autentificación (tareas 7 y 8), y vamos a configurar el virtual host para que se comporte de la siguiente manera: el acceso a la URL departamentos.iesgn.org/secreto se hace forma directa desde la intranet, desde la red pública te pide la autentificación. Muestra el resultado al profesor.**
 
