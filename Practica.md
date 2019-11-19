@@ -62,7 +62,7 @@ Los dos sitios web tendrán las siguientes características:
 - El nombre de dominio del primero será www.iesgn.org, su directorio base será /srv/www/iesgn y contendrá una página llamada index.html, donde sólo se verá una bienvenida a la página del Instituto Gonzalo Nazareno.
 - En el segundo sitio vamos a crear una página donde se pondrán noticias por parte de los departamento, el nombre de este sitio será departamentos.iesgn.org, y su directorio base será /srv/www/departamentos. En este sitio sólo tendremos una página inicial index.html, dando la bienvenida a la página de los departamentos del instituto.
 
-**Tarea 2 (1 punto)(Obligatorio): Configura la resolución estática en los clientes y muestra el acceso a cada una de las páginas.**
+**Tarea 2: Configura la resolución estática en los clientes y muestra el acceso a cada una de las páginas.**
 Se copia el fichero default:
 ~~~
 vagrant@servidornginx:/etc/nginx/sites-available$ sudo cp default iesgn
@@ -72,8 +72,8 @@ vagrant@servidornginx:/etc/nginx/sites-available$ sudo cp default departamentos
 Se modifica /etc/nginx/sites-available/iesgn:
 ~~~
 server {
-        listen 80 default_server;
-        listen [::]:80 default_server;
+        listen 80;
+        listen [::]:80;
 
         root /srv/www/iesgn;
 
@@ -90,8 +90,8 @@ server {
 Se modifica /etc/nginx/sites-available/departamentos:
 ~~~
 server {
-        listen 80 default_server;
-        listen [::]:80 default_server;
+        listen 80;
+        listen [::]:80;
 
         root /srv/www/departamentos;
 
@@ -106,22 +106,102 @@ server {
 }
 ~~~
 
+Además, se crean los enlaces simbólicos en sites-enabled:
+~~~
+vagrant@servidornginx:/etc/nginx/sites-enabled$ sudo ln -s /etc/nginx/sites-available/iesgn .
+vagrant@servidornginx:/etc/nginx/sites-enabled$ sudo ln -s /etc/nginx/sites-available/departamentos .
+~~~
+
+Se modifican los permisos:
+~~~
+vagrant@servidornginx:/etc/nginx/sites-available$ sudo chown -R www-data:www-data /srv/www
+~~~
+
+![Iegn](bimg.png)
+![Departamentos](cimg.png)
 
 
 
 
-
-Mapeo de URL
+## Mapeo de URL
 Cambia la configuración del sitio web www.iesgn.org para que se comporte de la siguiente forma:
 
-**Tarea 3 (1 punto)(Obligatorio): Cuando se entre a la dirección www.iesgn.org se redireccionará automáticamente a www.iesgn.org/principal, donde se mostrará el mensaje de bienvenida. En el directorio principal no se permite ver la lista de los ficheros, no se permite que se siga los enlaces simbólicos y no se permite negociación de contenido. Muestra al profesor el funcionamiento.**
+**Tarea 3: Cuando se entre a la dirección www.iesgn.org se redireccionará automáticamente a www.iesgn.org/principal, donde se mostrará el mensaje de bienvenida. En el directorio principal no se permite ver la lista de los ficheros, no se permite que se siga los enlaces simbólicos y no se permite negociación de contenido. Muestra al profesor el funcionamiento.**
+
+Se crea el directorio principal y se cambian los propietarios:
+~~~
+vagrant@servidornginx:/srv/www/iesgn$ sudo mkdir principal
+vagrant@servidornginx:/srv/www/iesgn$ sudo chown www-data:www-data principal/
+~~~
+
+Y se modifica el fichero /etc/nginx/sites-available/iesgn para añadir la redirección:
+~~~
+server {
+        listen 80;
+        listen [::]:80;
+
+        root /srv/www/iesgn;
+
+        index index.html index.htm index.nginx-debian.html;
+
+        server_name www.iesgn.org;
+
+        location / {
+                return 301 http://www.iesgn.org/principal;
+        }
+        location /principal {
+                try_files $uri $uri/ =404;
+        }
+}
+~~~
+
+Se mueve el index.html al nuevo directorio principal:
+~~~
+vagrant@servidornginx:/srv/www/iesgn$ mv index.html principal/
+~~~
+
+Por último, se restaura el servicio de Nginx para que se efectúen los cambios:
+~~~
+vagrant@servidornginx:/srv/www/iesgn$ sudo systemctl restart nginx.service 
+~~~
+
+![Redireccionamiento](dimg.png)
 
 
-**Tarea 4 (1 punto)(Obligatorio): Si accedes a la página www.iesgn.org/principal/documentos se visualizarán los documentos que hay en /srv/doc. Por lo tanto se permitirá el listado de fichero y el seguimiento de enlaces simbólicos siempre que sean a ficheros o directorios cuyo dueño sea el usuario. Muestra al profesor el funcionamiento.**
+
+**Tarea 4: Si accedes a la página www.iesgn.org/principal/documentos se visualizarán los documentos que hay en /srv/doc. Por lo tanto se permitirá el listado de fichero y el seguimiento de enlaces simbólicos siempre que sean a ficheros o directorios cuyo dueño sea el usuario. Muestra al profesor el funcionamiento.**
+Se añaden los cambios en /etc/nginx/sites-available/iesgn con un alias:
+~~~
+        location /principal/documentos {
+                try_files $uri $uri/ =404;
+                alias /srv/doc;
+        }
+~~~
+
+Se crea el directorio doc y se cambia el propietario:
+~~~
+vagrant@servidornginx:/srv$ sudo mkdir doc
+vagrant@servidornginx:/srv$ sudo chown www-data:www-data doc/
+~~~
+
+Y se crean algunos ficheros de prueba:
+~~~
+vagrant@servidornginx:/srv/doc$ ls
+prueba1  prueba2
+~~~
+
+![Documentos](eimg.png)
+
+~~~
+vagrant@servidornginx:/srv/doc$ touch /home/vagrant/ficheroVagrant.txt
+vagrant@servidornginx:/srv/doc$ sudo ln -s /home/vagrant/ficheroVagrant.txt /srv/doc/
+
+
+
 
 **Tarea 5 (1 punto): En todo el host virtual se debe redefinir los mensajes de error de objeto no encontrado y no permitido. Para el ello se crearan dos ficheros html dentro del directorio error. Entrega las modificaciones necesarias en la configuración y una comprobación del buen funcionamiento.**
 
-Autentificación, Autorización, y Control de AccesoPermalink
+Autentificación, Autorización, y Control de Acceso
 
 
 **Tarea 6 (1 punto)(Obligatorio): Añade al escenario Vagrant otra máquina conectada por una red interna al servidor. A la URL departamentos.iesgn.org/intranet sólo se debe tener acceso desde el cliente de la red local, y no se pueda acceder desde la anfitriona por la red pública. A la URL departamentos.iesgn.org/internet, sin embargo, sólo se debe tener acceso desde la anfitriona por la red pública, y no desde la red local.**
