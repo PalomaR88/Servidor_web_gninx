@@ -6,7 +6,7 @@ sudo apt update
 sudo apt install nginx
 ~~~
 
-## Instroducción a virtual hosting con nginx
+## Introducción a virtual hosting con nginx
 Podemos encontrar los sitios disponibles y activos del servidor nginx, siguiendo la filosofía de Apache2 en los directorios:
 ~~~
 /etc/nginx/sites-availables/
