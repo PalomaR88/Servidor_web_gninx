@@ -48,7 +48,7 @@ Commercial support is available at
 </html>
 ~~~
 
-![Imagen incial](aimg.png)
+![Imagen incial](images/aimg.png)
 
 
 
@@ -117,8 +117,8 @@ Se modifican los permisos:
 vagrant@servidornginx:/etc/nginx/sites-available$ sudo chown -R www-data:www-data /srv/www
 ~~~
 
-![Iegn](bimg.png)
-![Departamentos](cimg.png)
+![Iegn](images/bimg.png)
+![Departamentos](images/cimg.png)
 
 
 
@@ -165,7 +165,7 @@ Por último, se restaura el servicio de Nginx para que se efectúen los cambios:
 vagrant@servidornginx:/srv/www/iesgn$ sudo systemctl restart nginx.service 
 ~~~
 
-![Redireccionamiento](dimg.png)
+![Redireccionamiento](images/dimg.png)
 
 
 
@@ -192,7 +192,7 @@ vagrant@servidornginx:/srv/doc$ ls
 prueba1  prueba2
 ~~~
 
-![Documentos](eimg.png)
+![Documentos](images/eimg.png)
 
 A continuación creamos un par de enlaces simbólicos, uno cuyo propietario del fichero es el usuario vagrant y el enlace es el usuario root y otro cuyo propietario del enlace y del fichero es el root
 ~~~
@@ -203,10 +203,10 @@ vagrant@servidornginx:~$ sudo ln -s /home/vagrant/ficheroRoot.txt /srv/doc/
 ~~~
 
 Se comprueba que el fichero que coincide el usuario del enlace simbólico y el propietario del fichero se puede ver.
-![Enlaces](fimg.png)
+![Enlaces](images/fimg.png)
 
 Y el fichero cuyos propietarios del enlace y del fichero son diferentes no aparece.
-![Enlaces](gimg.png)
+![Enlaces](images/gimg.png)
 
 
 
@@ -234,7 +234,7 @@ Se modifica el fichero /etc/nginx/sites-available/iesgn y se añaden las líneas
 ~~~
 
 Se usa el fichero del ejercicio anterior para ver si funciona correctamente el error 404:
-![Enlaces](himg.png)
+![Enlaces](images/himg.png)
 
 
 
@@ -277,10 +277,10 @@ server {
 ~~~
 
 Tras reiniciar el servicio se comprueba. En primer lugar, internet, desde la máquina anfitriona, debe funcionar:
-![Internet](iimg.png)
+![Internet](images/iimg.png)
 
 Sin embargo, la intranet no funciona:
-![Intranet](jimg.png)
+![Intranet](images/jimg.png)
 
 En la máquina conectada a la intranet, al acceder a internet, a través de lynx porque no dispone de interfaz gráfica, aparece el siguiente error:
 ~~~
@@ -331,10 +331,10 @@ Adding password for user vagrant
 ~~~
 
 Comprobación:
-![Secreto](kimg.png)
+![Secreto](images/kimg.png)
 
 Introduciendo el usuario y la contraseña correcta podemos acceder al sitio:
-![Secreto](limg.png)
+![Secreto](images/limg.png)
 
 
 **Tarea 8: Cómo hemos visto la autentificación básica no es segura, modifica la autentificación para que sea del tipo digest, y sólo sea accesible a los usuarios pertenecientes al grupo directivos. Comprueba las cabeceras de los mensajes HTTP que se intercambian entre el servidor y el cliente. ¿Cómo funciona esta autentificación?**
