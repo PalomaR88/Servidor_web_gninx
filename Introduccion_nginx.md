@@ -1,6 +1,6 @@
 # Servidor web nginx
 
-## Instalación de nginnx
+## Instalación de nginx
 ~~~
 sudo apt update
 sudo apt install nginx
